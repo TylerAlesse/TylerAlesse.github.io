@@ -1071,3 +1071,10 @@ function changeDirection(shift) {
     mazeData.compassDir = tempDir;
     mazeData.playerChar = mazeData.playerCharDir[tempDir];
 }
+
+/**
+ * Reset the controls to their default settings
+ **/
+function resetControls() {
+    controlData.resetControls();
+}

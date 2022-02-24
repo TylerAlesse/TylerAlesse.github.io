@@ -475,4 +475,28 @@ class ControlData {
         
         return false; // load failed
     }
+
+    /**
+     * Reset controlMap and controlChar to their
+     * default values
+     */
+    resetControls() {
+        this.#_controlMap = new ctrl_base(
+            KeyInfo.getIDFromKeyCode("KeyW"),
+            KeyInfo.getIDFromKeyCode("KeyA"),
+            KeyInfo.getIDFromKeyCode("KeyD"),
+            KeyInfo.getIDFromKeyCode("Space"),
+            KeyInfo.getIDFromKeyCode("NULL"),
+            KeyInfo.getIDFromKeyCode("KeyM")
+        );
+
+        this.#_controlChar = new ctrl_base (
+            KeyInfo.getCharFromKeyCode("KeyW"),
+            KeyInfo.getCharFromKeyCode("KeyA"),
+            KeyInfo.getCharFromKeyCode("KeyD"),
+            KeyInfo.getCharFromKeyCode("Space"),
+            KeyInfo.getCharFromKeyCode("NULL"),
+            KeyInfo.getCharFromKeyCode("KeyM")
+        );
+    }
 }
