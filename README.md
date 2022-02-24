@@ -1,4 +1,5 @@
-# The Maze - Version 2 - Build: 2022.02.20
+# The Maze
+## Version 2 - Build: 2022.02.20
 
 Your Goal: Escape the Maze
 
