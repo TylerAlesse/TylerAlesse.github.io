@@ -74,7 +74,9 @@ class MazeData {
     // Called when a new Maze object is created
     constructor() {
         try {
+            // this.#createMaze();  // TODO: To be implemented
             this.#loadDefaultMaze();
+
             this.#_discovered = new Array(this.#_dim);
             for(let i = 0; i < this.#_dim; ++i) {
                 this.#_discovered[i] = new Array(this.#_dim);
@@ -224,8 +226,10 @@ class MazeData {
     /**
      * Get the necessary information to display the
      * main corridor and side corridors
+     * 
+     * @param {Number} maxDepth The maximum depth to check
      **/
-    getCorridorInfo() {
+    getCorridorInfo(maxDepth) {
         let px = this.playerX;
         let py = this.playerY;
         let pd = Compass.ALLDELTA[this.compassDir];
@@ -234,12 +238,12 @@ class MazeData {
 
         if(pd.x != 0) {
             // player facing an x direction
-            center = this.#_checkForWallsUD(px + pd.x, py, pd, 6, false);
+            center = this.#_checkForWallsUD(px + pd.x, py, pd, maxDepth, false);
             left = this.#_checkForWallsUD(px, py + pd.x, pd, center.length, true);
             right = this.#_checkForWallsUD(px, py - pd.x, pd, center.length, true);
         } else {
             // player facing a y direction
-            center = this.#_checkForWallsLR(px, py + pd.y, pd, 6, false);
+            center = this.#_checkForWallsLR(px, py + pd.y, pd, maxDepth, false);
             left = this.#_checkForWallsLR(px - pd.y, py, pd, center.length, true);
             right = this.#_checkForWallsLR(px + pd.y, py, pd, center.length, true);
         }
@@ -268,7 +272,7 @@ class MazeData {
         let cd = 0;
         let forceStop = false;
         let out = "";
-        while(cd < maxD && !forceStop) {
+        while(cd <= maxD && !forceStop) {
             if(px < 0 || px >= this.#_dim ||
                 py < 0 || py >= this.#_dim) {
                 // Invalid px or py position
@@ -309,7 +313,7 @@ class MazeData {
         let cd = 0;
         let forceStop = false;
         let out = "";
-        while(cd < maxD && !forceStop) {
+        while(cd <= maxD && !forceStop) {
             if(px < 0 || px >= this.#_dim ||
                 py < 0 || py >= this.#_dim) {
                 // Invalid px or py position
@@ -346,7 +350,7 @@ class MazeData {
             rowStr = "";
             for(let y = this.playerY - 2; y <= this.playerY + 2; ++y) {
                 if(x < 0 || x >= this.#_dim || y < 0 || y >= this.#_dim) {
-                    rowStr += "#";
+                    rowStr += "X";
                     continue;
                 } else if(x === this.playerX && y === this.playerY) {
                     rowStr += this.playerChar;
@@ -422,7 +426,7 @@ class MazeData {
                 this.#layout = JSON.parse(request.responseText);
 
                 //? We hard code this because we do not auto-generate the maze, yet
-                this.#playerX = 0; this.#playerY = 2;
+                this.#playerX = 1; this.#playerY = 1; // 0, 2
                 this.#_compassDir = 2;
                 this.#_dim = 30;
             } else {
@@ -431,6 +435,33 @@ class MazeData {
         } catch(err) {
             throw err;
         }
+    }
+
+    /**
+     * Generates a new maze
+     * 
+     * @param {Number} dim The total dimensions of the maze, must be >60
+     */
+    #createMaze(dim) {
+        let tempLayout = new Array();
+
+        for(let i = 0; i < dim; ++i) {
+            tempLayout.push(new Array());
+            for(let k = 0; k < dim; ++k) {
+                tempLayout[i].push("#");
+            }
+        }
+
+        this.#generateMaze(tempLayout);
+    }
+
+    /**
+     * Generate a maze for the given 2D array
+     * 
+     * @param {String[][]} baseMaze The base maze 2D array 
+     */
+    #generateMaze(baseMaze) {
+
     }
 
     /**

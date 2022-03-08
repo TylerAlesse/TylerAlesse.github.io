@@ -498,5 +498,7 @@ class ControlData {
             KeyInfo.getCharFromKeyCode("NULL"),
             KeyInfo.getCharFromKeyCode("KeyM")
         );
+
+        this.saveControlData();
     }
 }

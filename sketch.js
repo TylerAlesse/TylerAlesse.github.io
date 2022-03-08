@@ -1,6 +1,6 @@
 /**************************************************************************
 **                                                                       **
-**    The Maze - Version 2 - Build: 2022.02.20                           **
+**    The Maze - Version 2 - Build: 2022.03.07                           **
 **    By: Tyler Alesse                                                   **
 **                                                                       **
 **                                                                       **
@@ -31,46 +31,16 @@
 ///////////////
 
 /**
- * The Canvas Dimensions
- **/
-const CVS_DIM = 800;
-
-/**
  * The height of the feedback section
  **/
-const FEED_HEIGHT = 120;
-
-/**
- * The bounding box of the game display
- **/
-const AB = new Bounds(0, 0, CVS_DIM, CVS_DIM - FEED_HEIGHT);
-
-/**
- * The `x` coordinate of the compass display
- **/
-const COMPASS_X = (CVS_DIM / 2) - 20;
-
-/**
- * The `y` coordinate of the compass display
- **/
-const COMPASS_Y = CVS_DIM - 95;
-
-/**
- * Lengthof each cell for game drawing
- **/
-const _CELL_LENGTH = 60;
-
-/**
- * The maximum view depth of a corridor
- **/
-const _MAX_DEPTH = 5;
+ const FEED_HEIGHT = 120;
 
 /**
  * The primary angle
  * 
  * Used for drawing the corridors
  **/
-const _ALPHA = 50;
+const _ALPHA = 45;
 
 /**
  * The secondary angle
@@ -83,6 +53,55 @@ const _BETA = 90 - _ALPHA;
  * The local path of the settings image
  **/
 const SETTINGS_IMAGE_PATH = "cog.png";
+
+//////////////////////
+// Pseudo-Constants //
+//////////////////////
+
+/**
+ * The canvas' X Dimension length
+ **/
+let CVS_X_DIM = 800;
+
+/**
+ * The canvas' Y Dimension length
+ **/
+let CVS_Y_DIM = 920;
+
+/**
+ * The bounding box of the game display
+ * 
+ * @type {Bounds}
+ **/
+let gameDisplayBounds;
+
+/**
+ * The `x` coordinate of the compass display
+ * 
+ * @type {Number}
+ **/
+let COMPASS_X
+
+/**
+ * The `y` coordinate of the compass display
+ * 
+ * @type {Number}
+ **/
+let COMPASS_Y;
+
+/**
+ * Length of each cell for game drawing
+ * 
+ * @type {Number}
+ **/
+let _CELL_LENGTH;
+
+/**
+ * The maximum view depth of a corridor
+ * 
+ * @type {Number}
+ **/
+let _MAX_DEPTH;
 
 ///////////////
 // Variables //
@@ -115,25 +134,10 @@ let miniMapData = null;
  * interactive buttons on the interface
  * 
  * up, left, right, inter, settings
+ * 
+ * @type {ctrl_base}
  **/
-let btnBounds = new ctrl_base(
-    new Bounds(70, CVS_DIM - 60, 110, CVS_DIM - 20),
-    new Bounds(20, CVS_DIM - 60, 60, CVS_DIM - 20),
-    new Bounds(120, CVS_DIM - 60, 160, CVS_DIM - 20),
-    new Bounds(170, CVS_DIM - 60, 260, CVS_DIM - 20), // TODO: Create need for interaction
-    new Bounds(
-        CVS_DIM - FEED_HEIGHT + 10,
-        CVS_DIM - FEED_HEIGHT + 10,
-        CVS_DIM - 10,
-        CVS_DIM - 10
-    ),
-    new Bounds(
-        CVS_DIM - FEED_HEIGHT - 170,
-        CVS_DIM - FEED_HEIGHT + 10,
-        CVS_DIM - 180,
-        CVS_DIM - 10
-    )
-);
+let btnBounds;
 
 /**
  * Holds the loaded settings button image
@@ -151,6 +155,9 @@ let frameUpdate = true;
 //////////////////
 
 function preload() {
+    // Setup the necessary drawing information
+    setDrawData();
+
     try {
         let antiCache = new Date().getMilliseconds();
 
@@ -173,25 +180,27 @@ function preload() {
 }
 
 function setup() {
-    cvs = createCanvas(CVS_DIM, CVS_DIM);
+    cvs = createCanvas(CVS_X_DIM, CVS_Y_DIM);
+    cvs.center("horizontal");
     cvs.mouseOut(mouseMovedOut);
 
     angleMode(DEGREES); // DEGREES to make math for me a little easier
-    frameRate(24);      // Lower framerate to lower unnecessary drawing steps
+    frameRate(24);      // Lower framerate to help reduce unnecessary drawing
     noSmooth();         // Disables smoothing
 }
 
 function draw() {
+    // If the main game frame needs to be updated
     if(frameUpdate) {
         // Used for determining where drawings aren't perfect
         background(255, 0, 255);
 
         // Get necessary drawing information from mazeData
-        let lcr = mazeData.getCorridorInfo();
+        let lcr = mazeData.getCorridorInfo(_MAX_DEPTH - 1);
 
         // Draw 3D Maze
         drawMainCorridor(lcr.c);
-        drawSideCorridors(lcr.c.length - 1, lcr.l, lcr.r);
+        determineSideCorridors(lcr.c.length, lcr.l, lcr.r);
 
         // Update the minimap as necessary
         miniMapData = mazeData.getMiniMapData();
@@ -488,19 +497,17 @@ function drawMiniMap(mmData) {
             } else if(mmData[y][x] === "E") {
                 fill(0, 255, 255);
             } else if(mmData[y][x] === "#") {
+                fill(100);
+            } else if(mmData[y][x] === "X") {
                 fill(0);
             } else {
-                // Error?
-                fill(255, 0, 255);
+                fill(255, 0, 255); // Unrecognized maze symbol
             }
         
             // Draw necessary box
             rect(mBtn.ax + (x * dimX), mBtn.ay + (y * dimY), mBtn.ax + ((x+1) * dimX), mBtn.ay + ((y+1) * dimY));
         }
     }
-
-    // _prepKeyDisplayText();
-    // text(tempCC.minimap, mBtn.ax + 20, mBtn.ay + 25);
 }
 
 /**
@@ -511,13 +518,13 @@ function drawFullMap() {
     fill(255);
     stroke(0);
     strokeWeight(2);
-    rect(100, 40, AB.bx - 100, AB.by - 40);
+    rect(100, 40, gameDisplayBounds.bx - 100, gameDisplayBounds.by - 40);
 
     let disc = mazeData.discovered;
     let fullMap = mazeData.layout;
 
-    let dimX = (AB.bx - 200) / fullMap.length;
-    let dimY = (AB.by - 80) / fullMap.length;
+    let dimX = (gameDisplayBounds.bx - 200) / fullMap.length;
+    let dimY = (gameDisplayBounds.by - 80) / fullMap.length;
 
     for(let x = 0; x < fullMap.length; ++x) {
         for(let y = 0; y < fullMap.length; ++y) {
@@ -568,47 +575,88 @@ function drawMainCorridor(center) {
         hasFalseDepth = true;
     }
 
-    a = _CELL_LENGTH + depth * _CELL_LENGTH;
+    a = _CELL_LENGTH + (depth * _CELL_LENGTH);
     b = round(a * sin(_BETA) / sin(_ALPHA));
 
     stroke(0);
-    strokeWeight(1);
+    strokeWeight(0);
 
     // FLOOR
     fill(60); // O.BL, I.BL, I.BR, O.BR
-    quad(0, AB.by, a, AB.by - b, AB.bx - a, AB.by - b, AB.bx, AB.by);
+    quad(0, gameDisplayBounds.by, a, gameDisplayBounds.by - b, gameDisplayBounds.bx - a, gameDisplayBounds.by - b, gameDisplayBounds.bx, gameDisplayBounds.by);
 
     // CEILING
     fill(120); // O.TL, I.TL, I.TR, O.TR
-    quad(0, 0, a, b, AB.bx - a, b, AB.bx, 0);
+    quad(0, 0, a, b, gameDisplayBounds.bx - a, b, gameDisplayBounds.bx, 0);
 
     // LEFT WALL
     fill(80); // O.BL, I.BL, I.TL, O.TL
-    quad(0, AB.by, a, AB.by - b, a, b, 0, 0);
+    quad(0, gameDisplayBounds.by, a, gameDisplayBounds.by - b, a, b, 0, 0);
     
     // RIGHT WALL
     fill(80); // O.BR, I.BR, I.TR, O.TR
-    quad(AB.bx, AB.by, AB.bx - a, AB.by - b, AB.bx - a, b, AB.bx, 0);
+    quad(gameDisplayBounds.bx, gameDisplayBounds.by, gameDisplayBounds.bx - a, gameDisplayBounds.by - b, gameDisplayBounds.bx - a, b, gameDisplayBounds.bx, 0);
+
+    // Add lines
+    stroke(0);
+    strokeWeight(1);
+
+    // Top Left and Bottom Left
+    line(0, 0, a, b);
+    line(0, gameDisplayBounds.by, a, gameDisplayBounds.by - b);
+
+    // Top Right and Bottom Right
+    line(gameDisplayBounds.bx, gameDisplayBounds.by, gameDisplayBounds.bx - a, gameDisplayBounds.by - b);
+    line(gameDisplayBounds.bx - a, b, gameDisplayBounds.bx, 0);
 
     if(!hasFalseDepth) {
         // BACK WALL
-        if(center.indexOf("2") !== -1) {
-            fill(0, 255, 255); // Wins!
-        } else {
-            fill(80);
-        }
+        if(center.indexOf("2") !== -1) { fill(0, 255, 255); } // Wins!
+        else { fill(80); }
 
-        // I.BL, I.TL, I.TR, I.BR
-        quad(a, AB.by - b, a, b, AB.bx - a, b, AB.bx - a, AB.by - b);
-    } else {
         strokeWeight(0);
-        drawFalseDepth(80,
-                    a - 1, (AB.bx / 2) - 40,
-                    b - 1, (AB.by / 2) - 40,
-            AB.bx - a + 1, (AB.bx / 2) + 40,
-            AB.by - b + 1, (AB.by / 2) + 40
+        // I.BL, I.TL, I.TR, I.BR
+        quad(
+            a,                        gameDisplayBounds.by - b,
+            a,                        b,
+            gameDisplayBounds.bx - a, b,
+            gameDisplayBounds.bx - a, gameDisplayBounds.by - b
+        );
+    } else {
+        drawFalseDepth(70,
+                    a - 1, (gameDisplayBounds.bx / 2) - 40,
+                    b - 1, (gameDisplayBounds.by / 2) - 40,
+            gameDisplayBounds.bx - a + 1, (gameDisplayBounds.bx / 2) + 40,
+            gameDisplayBounds.by - b + 1, (gameDisplayBounds.by / 2) + 40
         );
     }
+
+    //!!!!!!!!!!
+    //! DEBUG !!
+    //!!!!!!!!!!
+    
+    // strokeWeight(7);
+
+    // stroke(0, 255, 0);
+    // point(a, b);
+    // point(a, gameDisplayBounds.by - b);
+    // stroke(255, 0, 0); point(gameDisplayBounds.bx - a, b);
+    // stroke(0, 255, 0); point(gameDisplayBounds.bx - a, gameDisplayBounds.by - b);
+    
+    // stroke(0, 0, 255);
+    // point((gameDisplayBounds.bx / 2) - 40, (gameDisplayBounds.by / 2) - 40);
+    // point((gameDisplayBounds.bx / 2) + 40, (gameDisplayBounds.by / 2) + 40);
+    
+    // stroke(255, 0, 255);
+    // point(gameDisplayBounds.bx / 2, b);
+    // point(a, gameDisplayBounds.by / 2);
+    // point(gameDisplayBounds.bx / 2, gameDisplayBounds.by / 2);
+
+    // a = _CELL_LENGTH + ((depth+1) * _CELL_LENGTH);
+    // b = round(a * sin(_BETA) / sin(_ALPHA));
+
+    // stroke(255, 255, 255);
+    // point(a, b);
 }
 
 /**
@@ -619,7 +667,7 @@ function drawSettingsPane() {
     stroke(0);
     strokeWeight(0);
     fill(200, 200, 255);
-    rect(80, 100, AB.bx - 80, AB.by - 350);
+    rect(80, 100, gameDisplayBounds.bx - 80, gameDisplayBounds.by - 350);
 
     fill(0);        // Text Color
     textLeading(24); // Text Spacing
@@ -628,27 +676,27 @@ function drawSettingsPane() {
         // Conditional Next Step Instructions
         textSize(20);
         textStyle(ITALIC); // Set text to italic
-        text("Press the key you want to remap to", AB.bx / 2, 300);
+        text("Press the key you want to remap to", gameDisplayBounds.bx / 2, 300);
         textStyle(NORMAL); // Reset to normal
     } else if(controlData.isInvalidKey) {
         textSize(20);
         textStyle(ITALIC); // Set text to italic
-        text("Invalid key remapping.\nPlease use an alpha-numeric, spacebar, or arrow key", AB.bx / 2, 280);
+        text("Invalid key remapping.\nPlease use an alpha-numeric, spacebar, or arrow key", gameDisplayBounds.bx / 2, 280);
         textStyle(NORMAL); // Reset to normal
     } else if(controlData.isKeyTaken) {
         textSize(20);
         textStyle(ITALIC); // Set text to italic
-        text("Key already in use.", AB.bx / 2, 300);
+        text("Key already in use.", gameDisplayBounds.bx / 2, 300);
         textStyle(NORMAL); // Reset to normal
     }
 
     // Display Settings title
     textSize(40);
-    text("Settings", AB.bx / 2, 150);
+    text("Settings", gameDisplayBounds.bx / 2, 150);
 
     // Display Instructions
     textSize(24);
-    text("Press the key or\nclick the buttons to remap them", AB.bx / 2, 200);
+    text("Press the key or\nclick the buttons to remap them", gameDisplayBounds.bx / 2, 200);
 }
 
 /**
@@ -658,13 +706,16 @@ function drawSettingsPane() {
  * @param {string} leftBin The binary string of cells with corridors on the left
  * @param {string} rightBin The binary string of cells with corridors on the right
  */
-function drawSideCorridors(depth, leftBin, rightBin) {
+function determineSideCorridors(depth, leftBin, rightBin) {
+    let hasFalseDepth = false;
+
     // Cannot have a negative depth
     if(depth < 0) {
         console.error(`drawSideCorridors():\n Invalid Depth: ${depth}`);
         return;
     } else if(depth >= _MAX_DEPTH) {
         depth = _MAX_DEPTH - 1;
+        hasFalseDepth = true;
     }
 
     a = _CELL_LENGTH + depth * _CELL_LENGTH;
@@ -676,17 +727,17 @@ function drawSideCorridors(depth, leftBin, rightBin) {
     stroke(0);
     strokeWeight(0);
 
-    for(let i = 0; i <= depth; ++i) {
+    for(let i = 0; i < depth; ++i) {
         if(lbInt % 2 == 1) {
-            drawSideCorridor(i, depth + 1, a, b, 0, 1);
+            drawSideCorridor(i, depth, a, b, 0, 1, hasFalseDepth);
         }
 
         lbInt = lbInt >> 1;
     }
 
-    for(let i = 0; i <= depth; ++i) {
+    for(let i = 0; i < depth; ++i) {
         if(rbInt % 2 == 1) {
-            drawSideCorridor(i, depth + 1, a, b, AB.bx, -1);
+            drawSideCorridor(i, depth, a, b, gameDisplayBounds.bx, -1, hasFalseDepth);
         }
 
         rbInt = rbInt >> 1;
@@ -702,13 +753,22 @@ function drawSideCorridors(depth, leftBin, rightBin) {
  * @param {number} b Point B
  * @param {number} xOff The offset of the points
  * @param {number} adj Adjust the points positively or negatively
+ * @param {boolean} hasFalseDepth Does the corridor have a false depth perception
  */
-function drawSideCorridor(cd, md, a, b, xOff, adj) {
+function drawSideCorridor(cd, md, a, b, xOff, adj, hasFalseDepth) {
     let pn    = (adj >= 0 ? 1 : -1);
     let relA  = (cd * a) / md;
     let relB  = (cd * b) / md;
     let relAN = (cd + 1) * a / md;
     let relBN = (cd + 1) * b / md;
+
+    //! DEBUG
+    // console.log(`C.Depth: ${cd}, M.Depth: ${md}`);
+    // console.log(`a: ${a}, b: ${b}`);
+    // console.log(`relA: ${relA}, relB: ${relB}`);
+    // console.log(`relAN: ${relAN}, relBN: ${relBN}`);
+    // console.log(`Hypotenuse: ${Math.sqrt(((relAN - relA) * (relAN - relA)) + ((relBN - relB) * (relBN - relB)))}`);
+    // console.log();
 
     stroke(0);
     strokeWeight(0);
@@ -719,19 +779,16 @@ function drawSideCorridor(cd, md, a, b, xOff, adj) {
 
     // Floor Triangle
     fill(60);
-    triangle(xOff + pn*relA, AB.by - relB + 2, xOff + pn*(relAN + 2), AB.by - relBN, xOff + pn*relA, AB.by - relBN);
+    triangle(xOff + pn*relA, gameDisplayBounds.by - relB + 2, xOff + pn*(relAN + 2), gameDisplayBounds.by - relBN, xOff + pn*relA, gameDisplayBounds.by - relBN);
 
     // Line Fixes
     strokeWeight(1);
-    if(cd === 0) {
-        line(xOff + pn*relAN, relBN, xOff + pn*relAN, AB.by - relBN);
-    } else {
-        line(xOff + pn*relA, relB, xOff + pn*relA, AB.by - relB);
 
-        if(cd + 1 <= md) {
-            line(xOff + pn*(relAN + 2), relBN, xOff + pn*(relAN + 2), AB.by - relBN);
-        }
+    line(xOff + pn*relA, relB, xOff + pn*relA, gameDisplayBounds.by - relB);
+    if((cd + 1) < md || hasFalseDepth) {
+        line(xOff + pn*relAN, relBN, xOff + pn*relAN, gameDisplayBounds.by - relBN);
     }
+    
     strokeWeight(0);
 }
 
@@ -778,6 +835,14 @@ function drawSideCorridor(cd, md, a, b, xOff, adj) {
     // Back Wall
     fill(0);
     rect(_axe, _aye, _bxe, _bye);
+
+    // Add lines
+    stroke(0);
+    strokeWeight(1);
+    line(_axs, _ays, _axe, _aye);
+    line(_bxs, _bys, _bxe, _bye);
+    line(_axs, _bys, _axe, _bye);
+    line(_bxs, _ays, _bxe, _aye);
 }
 
 /**
@@ -788,20 +853,68 @@ function drawPlayerWinPane() {
     stroke(0);
     strokeWeight(0);
     fill(0, 0, 150);
-    rect(70, 90, AB.bx - 70, AB.by - 390);
+    rect(70, 90, gameDisplayBounds.bx - 70, gameDisplayBounds.by - 390);
     fill(0, 150, 200);
-    rect(80, 100, AB.bx - 80, AB.by - 400);
+    rect(80, 100, gameDisplayBounds.bx - 80, gameDisplayBounds.by - 400);
 
     fill(0);         // Text Color
     textLeading(24); // Text Spacing
     textSize(50);
-    text("You Win!", AB.bx / 2, 200);
+    text("You Win!", gameDisplayBounds.bx / 2, 200);
 }
 
 
 ///////////////////////////
 // Draw Helper Functions //
 ///////////////////////////
+
+/**
+ * Sets the necessary data to draw the canvas properly
+ * 
+ * Based on the available window height
+ **/
+function setDrawData() {
+    if(windowHeight < windowWidth) {
+        CVS_Y_DIM = (windowHeight < CVS_Y_DIM ? CVS_Y_DIM : windowHeight - 20);
+        CVS_X_DIM = CVS_Y_DIM - 120;
+    } else {
+        CVS_Y_DIM = (windowWidth < CVS_Y_DIM ? CVS_Y_DIM : windowWidth - 20);
+        CVS_X_DIM = CVS_Y_DIM - 120;
+    }
+
+    // Game Display Bounds
+    gameDisplayBounds = new Bounds(0, 0, CVS_X_DIM, CVS_Y_DIM - FEED_HEIGHT);
+    
+    // Compass TL Coordinates
+    COMPASS_X = (CVS_X_DIM / 2) - 20;
+    COMPASS_Y = CVS_Y_DIM - 95;
+
+    // Corridor Drawing Specs
+    _CELL_LENGTH = 70;
+
+    // Default max corridor depth: 5
+    _MAX_DEPTH = 5;
+
+    // Interaction Buttons Bounds
+    btnBounds = new ctrl_base(
+        new Bounds(70, CVS_Y_DIM - 60, 110, CVS_Y_DIM - 20),
+        new Bounds(20, CVS_Y_DIM - 60, 60, CVS_Y_DIM - 20),
+        new Bounds(120, CVS_Y_DIM - 60, 160, CVS_Y_DIM - 20),
+        new Bounds(170, CVS_Y_DIM - 60, 260, CVS_Y_DIM - 20), // TODO: Create need for interaction
+        new Bounds(
+            CVS_X_DIM - FEED_HEIGHT + 10,
+            CVS_Y_DIM - FEED_HEIGHT + 10,
+            CVS_X_DIM - 10,
+            CVS_Y_DIM - 10
+        ),
+        new Bounds(
+            CVS_X_DIM - FEED_HEIGHT - 170,
+            CVS_Y_DIM - FEED_HEIGHT + 10,
+            CVS_X_DIM - 180,
+            CVS_Y_DIM - 10
+        )
+    );
+}
 
 /**
  * Draw the compass points
