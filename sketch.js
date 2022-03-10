@@ -1,29 +1,13 @@
-/**************************************************************************
-**                                                                       **
-**    The Maze - Version 2 - Build: 2022.03.07                           **
-**    By: Tyler Alesse                                                   **
-**                                                                       **
-**                                                                       **
-**    Your Goal: Escape the Maze                                         **
-**                                                                       **
-**                                                                       **
-**    Default Controls:                                                  **
-**        Move Forward: W                                                **
-**           Turn Left: A                                                **
-**          Turn Right: D                                                **
-**       Open Full Map: M (Click or Press anything to close it)          **
-**                                                                       **
-**        You use the mouse to open and close the settings.              **
-**        You can also use the mouse to press the buttons.               **
-**                                                                       **
-**                                                                       **
-**    Image Sources:                                                     **
-**        Settings Image                                                 **
-**            "Cog Free Icon"                                            **
-**            Online Web Fonts - CC BY 3.0                               **
-**            https://www.onlinewebfonts.com/icon/126582                 **
-**                                                                       **
-**************************************************************************/
+/********************************************************************
+ ********************************************************************
+ **                                                                **
+ **                           sketch.js                            **
+ **                   Created By: Tyler Alesse                     **
+ **                                                                **
+ **         The core of the canvas display functionality           **
+ **                                                                **
+ ********************************************************************
+ ********************************************************************/
 
 
 ///////////////
@@ -187,6 +171,8 @@ function setup() {
     angleMode(DEGREES); // DEGREES to make math for me a little easier
     frameRate(24);      // Lower framerate to help reduce unnecessary drawing
     noSmooth();         // Disables smoothing
+
+    noLoop(); //! DEBUG: REMOVE THIS WHEN DONE
 }
 
 function draw() {
@@ -517,13 +503,13 @@ function drawFullMap() {
     rectMode(CORNERS);
     fill(255);
     stroke(0);
-    strokeWeight(2);
-    rect(100, 40, gameDisplayBounds.bx - 100, gameDisplayBounds.by - 40);
+    strokeWeight(0.5);
+    rect(50, 40, gameDisplayBounds.bx - 50, gameDisplayBounds.by - 40);
 
     let disc = mazeData.discovered;
     let fullMap = mazeData.layout;
 
-    let dimX = (gameDisplayBounds.bx - 200) / fullMap.length;
+    let dimX = (gameDisplayBounds.bx - 100) / fullMap.length;
     let dimY = (gameDisplayBounds.by - 80) / fullMap.length;
 
     for(let x = 0; x < fullMap.length; ++x) {
@@ -546,7 +532,7 @@ function drawFullMap() {
             }
         
             // Draw necessary box
-            rect(100 + (x * dimX), 40 + (y * dimY), 100 + ((x+1) * dimX), 40 + ((y+1) * dimY));
+            rect(50 + (x * dimX), 40 + (y * dimY), 50 + ((x+1) * dimX), 40 + ((y+1) * dimY));
         }
     }
 }

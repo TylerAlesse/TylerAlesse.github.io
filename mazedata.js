@@ -74,14 +74,14 @@ class MazeData {
     // Called when a new Maze object is created
     constructor() {
         try {
-            // this.#createMaze();  // TODO: To be implemented
-            this.#loadDefaultMaze();
+            this.#createMaze(51);
+            // this.#loadDefaultMaze();
 
             this.#_discovered = new Array(this.#_dim);
             for(let i = 0; i < this.#_dim; ++i) {
                 this.#_discovered[i] = new Array(this.#_dim);
                 for(let k = 0; k < this.#_dim; ++k) {
-                    this.#_discovered[i][k] = false;
+                    this.#_discovered[i][k] = true;
                 }
             }
 
@@ -452,16 +452,129 @@ class MazeData {
             }
         }
 
-        this.#generateMaze(tempLayout);
+        this.#_dim = dim;
+        this.#_generateMaze(tempLayout);
     }
 
     /**
      * Generate a maze for the given 2D array
      * 
-     * @param {String[][]} baseMaze The base maze 2D array 
+     * Uses a slightly modified "Hunt-and-Kill" Algorithm
+     * 
+     * @param {String[][]} baseGrid The base 2D array to be turned into a maze
      */
-    #generateMaze(baseMaze) {
+    #_generateMaze(baseGrid) {
+        let newMaze = baseGrid;
+        let currX = Math.floor(Math.random() * (newMaze.length - 1)) + 1;
+        let currY = Math.floor(Math.random() * (newMaze.length - 1)) + 1;
+        let dx, dy;
+        let newX, newY;
+        let tempX, tempY;
+        let cellUnvisited = false, neighborVisited = false;
+        let foundNewCell = false;
+        let rng;
 
+        // debugger;
+
+        (currX % 2 === 0 ? currX++ : null);
+        (currY % 2 === 0 ? currY++ : null);
+
+        while(currX !== -1 && currY !== -1) {
+            // Reset flag
+            cellUnvisited = false;
+
+            // Check for unvisited neighbors
+            for(let i = 0; i < Compass.ALLDELTA.length; ++i) {
+                newX = currX + Compass.ALLDELTA[i].x * 2;  // new x coordinate to check
+                newY = currY + Compass.ALLDELTA[i].y * 2;  // new y coordinate to check
+
+                // If neighbor location is invalid, continue
+                if(newX <= 0 || newX >= newMaze.length ||
+                    newY <= 0 || newY >= newMaze.length) { continue; }
+                
+                // If neighbor location is unvisited, set unvisited flag to true
+                if(newMaze[newY][newX] === "#") { cellUnvisited = true; break; }
+            }
+
+            // If current cell has unvisited/valid neighbors
+            if(cellUnvisited) {
+                // Pick a random valid direction to check
+                do {
+                    rng = Math.floor(Math.random() * Compass.ALLDELTA.length);
+                    dx = Compass.ALLDELTA[rng].x; newX = currX + (dx * 2);
+                    dy = Compass.ALLDELTA[rng].y; newY = currY + (dy * 2);
+                } while(newX <= 0 || newX >= newMaze.length || newY <= 0 || newY >= newMaze.length || newMaze[newY][newX] === " ");
+
+                newMaze[newY][newX] = " ";               // Visited new cell
+                newMaze[currY + dy][currX + dx] = " ";   // Bridge path from previous cell
+                currX = newX;
+                currY = newY;
+
+            } else {
+                // If current cell has no unvisited/valid neighbors
+
+                // Assume no cells available
+                currX = -1; currY = -1;
+                foundNewCell = false;
+                neighborVisited = false;
+                
+                for(let i = 1; i < newMaze.length; i += 2) {
+                    for(let j = 1; j < newMaze[i].length; j += 2) {
+
+                        // If cell has already been used, move to next cell
+                        if(newMaze[j][i] !== "#") { continue; }
+
+                        // Check for unvisited neighbors
+                        for(let k = 0; k < Compass.ALLDELTA.length; ++k) {
+                            tempX = i + (Compass.ALLDELTA[k].x * 2);  // new x coordinate to check
+                            tempY = j + (Compass.ALLDELTA[k].y * 2);  // new y coordinate to check
+
+                            // If neighbor location is invalid, continue
+                            if(tempX <= 0 || tempX >= newMaze.length ||
+                                tempY <= 0 || tempY >= newMaze.length) { continue; }
+                            
+                            // If neighbor location is visited, set visited flag to true
+                            if(newMaze[tempY][tempX] !== "#") {
+                                neighborVisited = true;
+                            }
+                        }
+
+                        // If no visited neighbors, check next cell
+                        if(!neighborVisited) { continue; }
+
+                        // Pick a random valid direction to check
+                        do {
+                            rng = Math.floor(Math.random() * Compass.ALLDELTA.length);
+                            dx = Compass.ALLDELTA[rng].x; tempX = i + (dx * 2);
+                            dy = Compass.ALLDELTA[rng].y; tempY = j + (dy * 2);
+                        } while(tempX <= 0 || tempX >= newMaze.length || tempY <= 0 || tempY >= newMaze.length || newMaze[tempY][tempX] !== " ");
+
+                        foundNewCell = true;            // New starting cell found
+                        newMaze[j][i] = " ";            // Open new cell
+                        newMaze[j + dy][i + dx] = " ";  // Bridge from found neighbor
+                        currX = i; currY = j;           // Set current coordinates
+                        break;                          // stop for loop
+                    }
+
+                    if(foundNewCell) { break; }
+                }
+            }
+        }
+
+        // Set Entrance Cell
+        newMaze[1][1] = "S";
+
+        // Set Exit Cell
+        newMaze[newMaze.length - 2][newMaze.length - 2] = "E";
+
+        // Set maze layout to new maze
+        this.#_layout = newMaze;
+
+        // Set player starting coordinates
+        this.#_playerX = 1; this.#_playerY = 1;
+
+        // Set player facing direction
+        this.#_compassDir = 2;
     }
 
     /**
