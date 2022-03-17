@@ -171,8 +171,6 @@ function setup() {
     angleMode(DEGREES); // DEGREES to make math for me a little easier
     frameRate(24);      // Lower framerate to help reduce unnecessary drawing
     noSmooth();         // Disables smoothing
-
-    noLoop(); //! DEBUG: REMOVE THIS WHEN DONE
 }
 
 function draw() {
@@ -616,33 +614,6 @@ function drawMainCorridor(center) {
             gameDisplayBounds.by - b + 1, (gameDisplayBounds.by / 2) + 40
         );
     }
-
-    //!!!!!!!!!!
-    //! DEBUG !!
-    //!!!!!!!!!!
-    
-    // strokeWeight(7);
-
-    // stroke(0, 255, 0);
-    // point(a, b);
-    // point(a, gameDisplayBounds.by - b);
-    // stroke(255, 0, 0); point(gameDisplayBounds.bx - a, b);
-    // stroke(0, 255, 0); point(gameDisplayBounds.bx - a, gameDisplayBounds.by - b);
-    
-    // stroke(0, 0, 255);
-    // point((gameDisplayBounds.bx / 2) - 40, (gameDisplayBounds.by / 2) - 40);
-    // point((gameDisplayBounds.bx / 2) + 40, (gameDisplayBounds.by / 2) + 40);
-    
-    // stroke(255, 0, 255);
-    // point(gameDisplayBounds.bx / 2, b);
-    // point(a, gameDisplayBounds.by / 2);
-    // point(gameDisplayBounds.bx / 2, gameDisplayBounds.by / 2);
-
-    // a = _CELL_LENGTH + ((depth+1) * _CELL_LENGTH);
-    // b = round(a * sin(_BETA) / sin(_ALPHA));
-
-    // stroke(255, 255, 255);
-    // point(a, b);
 }
 
 /**
@@ -747,14 +718,6 @@ function drawSideCorridor(cd, md, a, b, xOff, adj, hasFalseDepth) {
     let relB  = (cd * b) / md;
     let relAN = (cd + 1) * a / md;
     let relBN = (cd + 1) * b / md;
-
-    //! DEBUG
-    // console.log(`C.Depth: ${cd}, M.Depth: ${md}`);
-    // console.log(`a: ${a}, b: ${b}`);
-    // console.log(`relA: ${relA}, relB: ${relB}`);
-    // console.log(`relAN: ${relAN}, relBN: ${relBN}`);
-    // console.log(`Hypotenuse: ${Math.sqrt(((relAN - relA) * (relAN - relA)) + ((relBN - relB) * (relBN - relB)))}`);
-    // console.log();
 
     stroke(0);
     strokeWeight(0);

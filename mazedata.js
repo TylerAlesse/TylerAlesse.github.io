@@ -474,8 +474,6 @@ class MazeData {
         let foundNewCell = false;
         let rng;
 
-        // debugger;
-
         (currX % 2 === 0 ? currX++ : null);
         (currY % 2 === 0 ? currY++ : null);
 
