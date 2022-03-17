@@ -81,7 +81,7 @@ class MazeData {
             for(let i = 0; i < this.#_dim; ++i) {
                 this.#_discovered[i] = new Array(this.#_dim);
                 for(let k = 0; k < this.#_dim; ++k) {
-                    this.#_discovered[i][k] = true;
+                    this.#_discovered[i][k] = false;
                 }
             }
 
