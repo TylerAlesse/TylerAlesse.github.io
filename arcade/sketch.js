@@ -378,6 +378,7 @@ function setupGameData() {
       // Nothing to set anymore
       break;
     case 1: // Space Invaders Mode
+    case 2: // Hybrid Mode
       spawnInvaders();
       break;
     default:
