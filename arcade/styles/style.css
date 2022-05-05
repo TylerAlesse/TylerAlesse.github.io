@@ -1,0 +1,67 @@
+body {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+#statementContainer {
+  position: absolute;
+  text-align: left;
+
+  width: auto;
+  max-width: 400px;
+  height: auto;
+
+  left: 0;
+  top: 0;
+
+  background: #000;
+  color: #FFF;
+  border: 2px dashed #FFF;
+}
+
+#statementContainer > #subContainer {
+  height: 100%;
+  width: 100%;
+  text-align: center;
+  font-size: 18px;
+}
+
+#statementContainer > #subContainer > .statementText {
+  margin: 3px;
+  padding: 3px;
+}
+
+#statementContainer > #subContainer > #refLink {
+  color: #87CEFA;
+  text-emphasis-color: #77BEEA;
+  margin-bottom: 10px;
+  display: block;
+}
+
+canvas {
+  display: block;
+  position: block;
+  z-index: 20;
+  margin: 0 auto;
+}
+
+div.background {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  z-index: -1;
+
+  background: #FFF;
+  background: linear-gradient(to right,
+    rgba(0,0,0,1),
+    rgba(20,20,80,1),
+    rgba(86,0,103,1),
+    rgba(20,20,80,1),
+    rgba(20,20,80,1),
+    rgba(20,20,80,1),
+    rgba(86,0,103,1),
+    rgba(20,20,80,1),
+    rgba(0,0,0,1)
+  );
+}

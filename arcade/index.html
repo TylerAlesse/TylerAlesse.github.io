@@ -1,15 +1,68 @@
 <!DOCTYPE html><html lang="en"><head>
-    <!-- Important stuff -->
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <!--
+      Webpage Stuff
+    -->
+    <link rel="stylesheet" type="text/css" href="styles/style.css">
     <meta charset="utf-8">
+
+    <!--
+      p5 Scripts
+    -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/addons/p5.sound.js"></script>
+
     
-    <!-- p5.js scripts -->
-    <script src="p5.js"></script>
-    <script src="p5.sound.min.js"></script>
+    <!-- Important Scripts -->
+    <script src="player_data.js"></script>
+    <script src="controller_data.js"></script>
+    <script src="tetromino.js"></script>
+    <script src="invader.js"></script>
+    <script src="bounding_box.js"></script>
+    <script src="sounds.js"></script>
+    <script src="sprites.js"></script>
+    <script src="score.js"></script>
+    <script src="game_state.js"></script>
+
+    <!-- Projectile Scripts -->
+    <script src="projectile.js"></script>
+    <script src="pew.js"></script>
+    <script src="laser.js"></script>
+
+
+    <!--
+      Artist's Statement Interactivity Script
+    -->
+    <script>
+      function updateStatementDisplay() {
+        let subContainer = document.querySelector("#subContainer");
+        if(subContainer.hidden) {
+          subContainer.hidden = false;
+          document.querySelector("#statementBtn").innerText = "Close Artist Statement";
+        } else {
+          subContainer.hidden = true;
+          document.querySelector("#statementBtn").innerText = "Open Artist Statement";
+        }
+      }
+    </script>
   </head>
   <body>
-    <!-- Game Scripts  -->
-    <script src="sketch.js"></script>
-  
-
-</body></html>
+    <div id="statementContainer">
+      <button id="statementBtn" onclick="updateStatementDisplay()">Open Artist Statement</button>
+      <div id="subContainer" hidden>
+        <p class="statementText">Retro Shoot-'em-up Remastered</p>
+        <p class="statementText">Creator: Tyler Alesse</p>
+        <p class="statementText">Year Created: 2022</p>
+        <p class="statementText">It was my intention to invoke a sense of nostalgia, the feeling of entering an arcade as a kid, or getting home from school and playing games on the old family computer.</p>
+        <p class="statementText">Designed with two different styles of retro games mixed together, endless gameplay and stage-based gameplay, to keep the player engaged. Drawing inspiration from a mix of different games that I enjoyed as a child, and still enjoy today.</p>
+        <p class="statementText">The core of the gameplay is intended to be a Galaga-esque game, with mechanics from a few other games from the late 90s and early 2000s.</p>
+        <a id="refLink" href="ref.html" target="_blank">References</a>
+      </div>
+    </div>
+    <div class="background"></div>
+  </body>
+  <!--
+    Checks if the browser is valid,
+      if valid, load the sketh script
+  -->
+  <script src="browser_check.js" defer></script>
+</html>
