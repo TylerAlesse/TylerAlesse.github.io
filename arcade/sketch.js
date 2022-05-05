@@ -424,6 +424,21 @@ function normalGameplayLoop() {
     updateInvaderProjectiles();
     drawInvaders();
     drawInvaderProjectiles();
+  } else if(gameSelect === 2) {
+    if(spawnTimer >= spawnFrequency) {
+      spawnTimer = 0;
+      spawnTetromino();
+    }
+
+    updateActiveTetros();
+    updateActiveInvaders();
+    updateInvaderProjectiles();
+    drawInvaders();
+    drawInvaderProjectiles();
+    drawTetrominos();
+
+    // Increment Tetromino Spawner Timer
+    ++spawnTimer;
   } else {
     console.error(`Invalid Game Mode: ${gameSelect}`);
     HALT_AND_CATCH_FIRE();
@@ -477,9 +492,9 @@ function updateGameStatus() {
   }
   else if(gameState.stateID === GameStateIDs.menuScreen) {
     if((keyIsPressed && keyCode === 83) || (controllerConnected && controller.DownDPad.isPressed())) {
-      gameSelect = gameSelect === 1 ? 0 : 1;
+      gameSelect = gameSelect >= 2 ? 0 : gameSelect+1;
     } else if((keyIsPressed && keyCode === 87) || (controllerConnected && controller.UpDPad.isPressed())) {
-      gameSelect = gameSelect === 0 ? 1 : 0;
+      gameSelect = gameSelect <= 0 ? 2 : gameSelect-1;
     } else if((keyIsPressed && keyCode === 75) || (controllerConnected && controller.AButton.isPressed())) {
       setupGameData();
       tempFrameData = new GameStateFrameData();
@@ -683,8 +698,9 @@ function drawGameSelectScreen() {
   textSize(25);
   textAlign(CENTER, TOP);
   
-  let tetroText = "Tetrominos";
-  let invadeText = "Invaders";
+  let tetroText = "Tetromino Mode";
+  let invadeText = "Invaders Mode";
+  let hybridText = "Hybrid Mode";
   
   textSize(35);
   switch(gameSelect) {
@@ -694,6 +710,9 @@ function drawGameSelectScreen() {
     case 1:
       invadeText = `> ${invadeText}`;
       break;
+    case 2:
+      hybridText = `> ${hybridText}`;
+      break;
     default:
        // Not supposed to happen, crash I guess?
       noLoop();
@@ -702,7 +721,8 @@ function drawGameSelectScreen() {
   }
   
   text(tetroText, width/2, height/2);
-  text(invadeText, width/2, 50 + height/2);
+  text(invadeText, width/2, 60 + height/2);
+  text(hybridText, width/2, 120 + height/2);
 }
 
 /**
@@ -1021,6 +1041,24 @@ function updateDifficulty() {
     }
 
     if(isEmpty) { spawnInvaders(); }
+  } else if(gameSelect === 2) {
+    let tempFreq = defaultSpawnFreq - (score / scalingValue);
+    spawnFrequency = (tempFreq < minSpawnFreq ? minSpawnFreq : tempFreq);
+    let tempDropRate = defaultDropRate - (score / scalingValue);
+    dropRate = (tempDropRate < minDropRate ? minDropRate : tempDropRate);
+
+    invaderMovementSpeed = defaultInvaderMovementSpeed - (score / 100);
+    if(invaderMovementSpeed <= 4) { invaderMovementSpeed = 4; }
+
+    // If there are no more invaders, add more
+    let isEmpty = true;
+    for(let i = 0; i < activeInvaders.length; ++i) {
+      if(activeInvaders[i].length !== 0) {
+        isEmpty = false; break;
+      }
+    }
+
+    if(isEmpty) { spawnInvaders(); }
   } else {
     console.error(`Invalid Game Mode: ${gameSelect}`);
     HALT_AND_CATCH_FIRE();
@@ -1095,6 +1133,10 @@ function updatePews() {
     if(gameSelect === 0) {
       removedPew = _pewTetroLogic(i);
     } else if(gameSelect === 1) {
+      removedPew = _pewInvadeLogic(i);
+    } else if (gameSelect === 2) {
+      removedPew = _pewTetroLogic(i);
+      if(removedPew) { i--; continue; }
       removedPew = _pewInvadeLogic(i);
     } else {
       console.error(`Invalid Game Mode: ${gameSelect}`);
@@ -1199,7 +1241,7 @@ function updateLasers() {
     lasers = [];              // Empty laser array
     movementDisabled = false; // Re-enable player movement
   } else {
-    if(gameSelect === 0) {
+    if(gameSelect === 0 || gameSelect === 2) {
       for(let i = 0; i < activeTetros.length; ++i) {
         if(BoundingBox.checkCollision(lasers[0].bounds, activeTetros[i].bounds)) {
           activeTetros.splice(i, 1); // Remove tetromino from array
@@ -1214,7 +1256,9 @@ function updateLasers() {
       // We only want to play the sound once, instead of for every tetromino
       // If sound is not muted, play tetromino clear sound
       if(enemyRemoved && !sounds.mute) { sounds.tetroClear.play(); }
-    } else if(gameSelect === 1) {
+    }
+    
+    if(gameSelect === 1 || gameSelect === 2) {
       for(let i = 0; i < activeInvaders.length; ++i) {
         for(let j = 0; j < activeInvaders[i].length; ++j) {
           if(BoundingBox.checkCollision(lasers[0].bounds, activeInvaders[i][j].bounds)) {
@@ -1231,8 +1275,6 @@ function updateLasers() {
       // We only want to play the sound once, instead of for every invader
       // If sound is not muted, play invader death sound
       if(enemyRemoved && !sounds.mute) { sounds.invaderDeath.play(); }
-    } else {
-
     }
   }
 }
